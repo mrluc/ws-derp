@@ -1,0 +1,17 @@
+
+{
+  "name":            "ws-derp",
+  "description":     "Derps up your `send` channel in Socket.IO reliably small frames.",
+  "keywords":        ["websockets","frames","derp","derping","e93","base","conversion","api"],
+  "author":          "Luc Fueston <superluc@gmail.com>",
+  "version":         "0.0.1",
+  "repository":      "git://github.com/mrluc/ws-derp",
+  "main":            "./lib/derp",
+  "engines":         {"node":">=0.4.0"}, 
+  "dependencies":    {
+                      "underscore":"*",
+                      "bases":"*"
+                     },
+  "devDependencies": {"docco": "~0.3.0"}
+}
+
