@@ -1,7 +1,7 @@
 
 {
   "name":            "ws-derp",
-  "description":     "Derps up your `send` channel in Socket.IO reliably small frames.",
+  "description":     "Derps up your `send` channel in Socket.IO for reliably small frames.",
   "keywords":        ["websockets","frames","derp","derping","e93","base","conversion","api"],
   "author":          "Luc Fueston <superluc@gmail.com>",
   "version":         "0.0.1",
