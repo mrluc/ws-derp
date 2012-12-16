@@ -3,8 +3,8 @@ ws-derp - Derp Up Your Socket.IO
 
 Socket.IO is awesome - it makes Websockets practical
 and clean, and Just Works so you don't have to work 
-around browser bugs. It's as for WebSockets, now, 
-as jQuery would have been in 2002.
+around browser bugs. It's as essential for WebSockets, now, 
+as jQuery would have been to us in 2002.
 
 With Socket.IO `on`/`emit`, you're probably used to frames like this:
 
@@ -32,6 +32,8 @@ guaranteed-small frame sizes).
 * [Installation](#installation)
 * [Usage](#usage)
 * [Pieces](#pieces)
+* [A Better Way?](#standard)
+* [Why?](#why)
 
 ### Installation
 
@@ -134,7 +136,7 @@ That's not optimal, but it's not trying to be optimal in that
 sense, and doesn't need to be - the benefit of  
 open-socket-versus-polling is so great that optimizing the actual frames would be 
 a waste of time for almost anyone, especially since 
-frames are going to be gzipped in the future.
+frames are often gzipped.
 
 And in fact for more general single-page-app projects, you're
 probably already using something like backbone.js that sends hashes
@@ -144,6 +146,46 @@ speed boost.
 But for some kinds of real-time, like multiplayer games, it makes
 sense to have one channel that's really optimized for the core
 updates, like entity positions each tick.
+
+<span id='standard'></span>
+#### Isn't There A Standard Derp?
+
+Surely the standard supports some super-sweet methods of
+compression? Like JSONP? Or, hey - if you're sending numbers, 
+real binary communication?
+
+That's all coming - and it'll be great. Even IE10 supports sending
+binary data over WebSockets. And libraries like BinaryJS 
+knit together 
+the browsers that do support 'real' binary, and it provides
+good custom `msgpack`-based encoding with to strings.
+
+But BinaryJS doesn't 
+have fallbacks as of this writing, and fallbacks -- making
+websockets work reliably cross-browser -- is a big pain with
+a lot of edge cases. And cross-browser gzip 
+is still emerging (to detect redundancy in such small messages,
+gzip really would need to 'remember' what it's seen in prior
+frames, which would be a significant increase in implementation
+complexity for the various browsers).
+
+When BinaryJS comes with socket.io-like transport fallbacks, 
+or when [gzip like this](http://www.ietf.org/mail-archive/web/hybi/current/msg01810.html)
+is the norm in all WebSocket implementations, then far better derping
+will be available. We're probably only a year or two out from 
+widespread adoption of websockets that take ArrayBuffers and blobs
+and such. And we're surely only a few patches away from fallbacks
+in the binary websockets projects, since Socket.io has them. How to
+best do gzip for frames in a way that can be implemented by clients
+is,
+as the link indicates, a heckofathing - but it's one that google's 
+apparently interested in.
+
+But at the moment, if you want to make your frames smaller
+with the cross-browser just-works of Socket.io, you'll have to 
+make them smaller yourself.
+
+#### Custom Derps
 
 You could just use `.send()` from the websockets standard, which
 socket.io also provides, and send a delimited separated sequence
@@ -167,37 +209,47 @@ But there are still two sources of inefficiency:
    In practice we can only use from base-58
    to base-93, and utf-8 is actually only base-128 for our 
    purposes, but any of that would be 
-   quite an improvement on base-10!
+   quite an improvement on base-10! (Oooh, and the
+   ws Quake encodes into 2-character pairs - very smart).
    
    gzip would whittle down the improvement with larger message
    bodies, but the nature of websocket frames is that they'll
    likely be smallish and frequent.
-   
-So that's what I played around with first! There are some classes
-sketched out around this that I'll probably extract out into 
-a little library before continuing on with my merry
-muckery.
 
-`TinySocketApi` (built on `CompressedKeys`) takes care 
-of the first point, and then a host of conversion, 
-rpc and other little helpers (`CompilingApiCall`,
-`Coder`,`PackedCalls`,`Conversions`,`Alphabet` - I know, I know) take 
-care of the second. `TinySocketApi` also handles binding 
-of sockets for the server and the client.
+So that's what I played around with.
 
-None of this is necessary - gzipped frames are probably fine -
-but it's been fun - and now we can send some ints via
 
-    socket.gameState [parseInt(pos.x), parseInt(pos.y), 92*92, 92*93]
+### Why?!?
 
-And the message produced will be
-
-    3:::1`6~-Y`Z~
-
-Instead of, for instance:
-
-    3:::'gameState',106,24,8464,8556
+None of this is necessary. Really.
 
 It's comforting to know the exact size of the messages 
 we send. We can start reasoning on what's possible, and make informed
-tradeoffs re: number of messages and their weight and number of clients.
+tradeoffs re: number of messages and their weight and number of
+clients.
+
+But the conversions code - I'd have probably used msgpack 
+for the format instead of rolling
+my own alphabet-based one if I had remembered what it was called,
+instead of googling fruitlessly around 'JSONP' and coming up with
+nothing.
+
+Likewise with the client-server binding and the one-character
+api dispatching - it's cute, but it'll never be a big deal
+from a performance perspective; I was
+just having fun hacking and making the messages as small as possible.
+
+As one of my coworkers pointed out, the packet boundaries are the only
+really important upper bounds to optimize for -- if you're sending a frame small enough that
+it'll fit in under the packet size for ethernet transport, then
+it's optimally sized, and you won't get much faster by slimming
+the packet down!
+
+(Although some people new to websockets also sometimes assume that
+there's a minimum chunk/frame/packet size stuck into the standard
+somewhere, and that that might be determinant, and of course there 
+really isn't).
+
+
+
+
